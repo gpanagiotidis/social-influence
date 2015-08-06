@@ -6,24 +6,22 @@ import java.util.Random;
  * <p>Singleton class encapsulating a {@link Random} instance. This object is framework-global. You may use it in order
  * to avoid instantiating new {@code Random} objects within your classes.</p>
  */
-public class RandomHelper {
+public final class RandomHelper {
     /**
      * <p>The internal {@link Random} object of this singleton class.</p>
      */
-    private static Random R = null;
+    private static Random r = null;
 
     /**
      * <p>Initialize the global {@link Random} instance with a seed. You may not initialize the global {@code Random}
      * instance once it has been used at least once.</p>
      *
      * @param seed the seed to initialize the global {@code Random} with
-     * @throws GraphException if the global {@code Random} instance has been used previously and thus cannot be
-     *                        initialized
      */
     public static void initRandom(long seed) {
-        if (R == null) {
+        if (r == null) {
             Finals.LOG.info(Finals.L_RANDOM_SEED, seed);
-            R = new Random(seed);
+            r = new Random(seed);
         } else {
             Finals.LOG.warn(Finals.L_RANDOM_ERROR);
         }
@@ -36,10 +34,10 @@ public class RandomHelper {
      * @return the global {@code Random} instance
      */
     public static Random getRandom() {
-        if (R == null) {
-            R = new Random();
+        if (r == null) {
+            r = new Random();
         }
-        return R;
+        return r;
     }
 
     /**

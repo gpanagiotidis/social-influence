@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-public class Finals {
+public final class Finals {
     /* Root logger */
     public static final Logger LOG = LoggerFactory.getLogger("");
 
@@ -34,7 +34,6 @@ public class Finals {
 
     /* Exceptions: these finals must be arguments to GraphException(). Format: E_CLASSNAME_IDENTIFIER. */
     public static final String E_PLAYER_NO_PARAMETER = "%s doesn't have any parameter with name %s.";
-    public static final String E_PLAYER_OPTION_NULL = "Player option value can't be null.";
 
     public static final String E_EDGE_WEIGHT_NEGATIVE = "Edge weight must be positive. Got %f.";
 
@@ -45,10 +44,7 @@ public class Finals {
     public static final String E_MOVE_WEIGHT_NEGATIVE = "A player is trying to add a Vertex on a Move object with a non-positive weight %f. This is caused when .putVertex() is called with a negative weight argument.";
 
     public static final String E_GRAPH_EDGE_DIFFERENT = "The source and target of an edge must both belong to the graph you are trying to add it.";
-    public static final String E_GRAPH_INDEX_OUT_OF_BOUNDS = "Vertex index must be between 0 (inclusive) and getVerticesCount() (exclusive). Got %d.";
     public static final String E_GRAPH_VERTEX_NOT_CONTAINED = "The vertex specified in %s doesn't belong in the graph.";
-
-    public static final String E_PAIR_NULL = "Pair cannot contain null values";
 
     public static final String E_HELPER_INSTANTIATE = "Cannot instantiate object of type %s";
 }

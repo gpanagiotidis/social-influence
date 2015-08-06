@@ -1,14 +1,16 @@
 package gr.james.socialinfluence.graph;
 
 import gr.james.socialinfluence.api.Graph;
+import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
 import gr.james.socialinfluence.util.collections.VertexPair;
+import gr.james.socialinfluence.util.exceptions.GraphException;
 
 import java.util.*;
 
-public class GraphOperations {
+public class GraphUtils {
     public static void createCircle(Graph g, boolean undirected) {
-        Iterator<Vertex> vertexIterator = g.getVertices().iterator();
+        Iterator<Vertex> vertexIterator = g.getVerticesAsList().iterator();
         Vertex previous = vertexIterator.next();
         Vertex first = previous;
         while (vertexIterator.hasNext()) {
@@ -51,8 +53,8 @@ public class GraphOperations {
      * @param g the graph to apply the transformation to
      */
     public static void connectAllVertices(Graph g) {
-        for (Vertex v : g.getVertices()) {
-            for (Vertex w : g.getVertices()) {
+        for (Vertex v : g.getVerticesAsList()) {
+            for (Vertex w : g.getVerticesAsList()) {
                 if (!v.equals(w)) {
                     g.addEdge(v, w);
                 }
@@ -72,7 +74,7 @@ public class GraphOperations {
     public static <T extends Graph> T combineGraphs(Class<T> type, Graph[] graphs) {
         T r = Helper.instantiateGeneric(type);
         for (Graph g : graphs) {
-            for (Vertex v : g.getVertices()) {
+            for (Vertex v : g.getVerticesAsList()) {
                 r.addVertex(v);
             }
             for (Map.Entry<VertexPair, Edge> e : g.getEdges().entrySet()) {
@@ -82,9 +84,29 @@ public class GraphOperations {
         return r;
     }
 
-    public Set<Vertex> getStubbornVertices(Graph g) {
+    public static <T extends Graph> Graph deepCopy(Class<T> type, Graph g) {
+        return deepCopy(type, g, g.getVerticesAsList());
+    }
+
+    public static <T extends Graph> Graph deepCopy(Class<T> type, Graph g, Collection<Vertex> includeOnly) {
+        Graph r = Helper.instantiateGeneric(type);
+        for (Vertex v : includeOnly) {
+            if (!g.containsVertex(v)) {
+                throw new GraphException(Finals.E_GRAPH_VERTEX_NOT_CONTAINED, "deepCopy");
+            }
+            r.addVertex(v);
+        }
+        for (Map.Entry<VertexPair, Edge> e : g.getEdges().entrySet()) {
+            if ((r.containsVertex(e.getKey().getFirst())) && r.containsVertex(e.getKey().getSecond())) {
+                r.addEdge(e.getKey().getFirst(), e.getKey().getSecond()).setWeight(e.getValue().getWeight());
+            }
+        }
+        return r;
+    }
+
+    public static Set<Vertex> getStubbornVertices(Graph g) {
         Set<Vertex> stubborn = new TreeSet<>();
-        for (Vertex v : g.getVertices()) {
+        for (Vertex v : g.getVerticesAsList()) {
             if (g.getOutDegree(v) == 1 && g.getOutEdges(v).containsKey(v)) {
                 stubborn.add(v);
             }

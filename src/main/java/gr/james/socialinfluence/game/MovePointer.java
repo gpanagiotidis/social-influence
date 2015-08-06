@@ -1,7 +1,7 @@
 package gr.james.socialinfluence.game;
 
+import gr.james.socialinfluence.util.Conditions;
 import gr.james.socialinfluence.util.Finals;
-import gr.james.socialinfluence.util.GraphException;
 
 /**
  * <p>Simple thread-safe wrapper class to avoid illegal calls on a {@link gr.james.socialinfluence.game.Move} object
@@ -34,14 +34,11 @@ public class MovePointer {
      *
      * @param e the {@link Move} to submit. This input will be deep-copied before it is submit as part of the
      *          {@link MovePointer} thread-safety.
-     * @throws GraphException when the input move is {@code null}
+     * @throws NullPointerException when the input move is {@code null}
      */
     public void submit(Move e) {
         synchronized (lock) {
-            if (e == null) {
-                throw new GraphException(Finals.E_MOVEPOINTER_SET_NULL);
-            }
-            this.ref = e.deepCopy();
+            this.ref = Conditions.requireNonNull(e, Finals.E_MOVEPOINTER_SET_NULL).deepCopy();
         }
     }
 }

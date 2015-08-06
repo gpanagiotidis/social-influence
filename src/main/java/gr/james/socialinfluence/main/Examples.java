@@ -1,18 +1,40 @@
 package gr.james.socialinfluence.main;
 
-import gr.james.socialinfluence.algorithms.generators.CycleGenerator;
+import gr.james.socialinfluence.algorithms.generators.WattsStrogatzGenerator;
+import gr.james.socialinfluence.algorithms.scoring.Degree;
 import gr.james.socialinfluence.api.Graph;
-import gr.james.socialinfluence.game.GameDefinition;
-import gr.james.socialinfluence.game.Player;
-import gr.james.socialinfluence.game.players.BruteForcePlayer;
+import gr.james.socialinfluence.api.GraphState;
 import gr.james.socialinfluence.graph.MemoryGraph;
+import gr.james.socialinfluence.graph.Vertex;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
 
 public class Examples {
     public static void main(String[] args) throws IOException {
-        Graph g = new CycleGenerator<>(MemoryGraph.class, 3).create();
-        Player p = new BruteForcePlayer();
-        p.getMove(g, new GameDefinition(3, 3.0, 0));
+        int n = 10000;
+        double p = 0.2;
+
+        long now = System.currentTimeMillis();
+        Graph g = new WattsStrogatzGenerator<>(MemoryGraph.class, 10000, 1000, 1.0).create();
+        System.out.println(System.currentTimeMillis() - now);
+
+        // Find largest degree
+        int largestDegree = 0;
+        GraphState<Integer> degrees = Degree.execute(g, true);
+        for (int d : degrees.values()) {
+            if (d > largestDegree) {
+                largestDegree = d;
+            }
+        }
+
+        // Get degree distribution
+        double[] degreeDistribution = new double[largestDegree];
+        for (Map.Entry<Vertex, Integer> e : degrees.entrySet()) {
+            degreeDistribution[e.getValue() - 1]++;
+        }
+
+        System.out.println(Arrays.toString(degreeDistribution));
     }
 }

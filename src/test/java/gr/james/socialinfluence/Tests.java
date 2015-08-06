@@ -1,10 +1,8 @@
 package gr.james.socialinfluence;
 
-import gr.james.socialinfluence.algorithms.distance.Dijkstra;
-import gr.james.socialinfluence.algorithms.distance.FloydWarshall;
 import gr.james.socialinfluence.algorithms.generators.*;
 import gr.james.socialinfluence.algorithms.iterators.GraphStateIterator;
-import gr.james.socialinfluence.algorithms.iterators.IndexIterator;
+import gr.james.socialinfluence.algorithms.iterators.OrderedVertexIterator;
 import gr.james.socialinfluence.algorithms.iterators.RandomSurferIterator;
 import gr.james.socialinfluence.algorithms.scoring.DeGroot;
 import gr.james.socialinfluence.algorithms.scoring.Degree;
@@ -16,16 +14,15 @@ import gr.james.socialinfluence.game.GameDefinition;
 import gr.james.socialinfluence.game.GameResult;
 import gr.james.socialinfluence.game.Move;
 import gr.james.socialinfluence.graph.Edge;
-import gr.james.socialinfluence.graph.GraphOperations;
+import gr.james.socialinfluence.graph.GraphUtils;
 import gr.james.socialinfluence.graph.MemoryGraph;
 import gr.james.socialinfluence.graph.Vertex;
 import gr.james.socialinfluence.util.RandomHelper;
 import gr.james.socialinfluence.util.collections.VertexPair;
-import gr.james.socialinfluence.util.collections.states.DoubleGraphState;
+import gr.james.socialinfluence.util.states.DoubleGraphState;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Tests {
@@ -40,7 +37,7 @@ public class Tests {
 
         /* Create graph and randomize edge weights */
         Graph g = new RandomGenerator<>(MemoryGraph.class, vertexCount, p).create();
-        GraphOperations.createCircle(g, true);
+        GraphUtils.createCircle(g, true);
         for (Map.Entry<VertexPair, Edge> e : g.getEdges().entrySet()) {
             e.getValue().setWeight(RandomHelper.getRandom().nextDouble());
         }
@@ -64,7 +61,7 @@ public class Tests {
 
         /* Create graph and randomize edge weights */
         Graph g = new RandomGenerator<>(MemoryGraph.class, vertexCount, p).create();
-        GraphOperations.createCircle(g, true);
+        GraphUtils.createCircle(g, true);
         for (Map.Entry<VertexPair, Edge> e : g.getEdges().entrySet()) {
             e.getValue().setWeight(RandomHelper.getRandom().nextDouble());
         }
@@ -85,7 +82,7 @@ public class Tests {
         }
 
         /* Assert if maps not approx. equal with 1% error */
-        for (Vertex v : g.getVertices()) {
+        for (Vertex v : g.getVerticesAsList()) {
             Assert.assertEquals("randomSurferTest - " + g, 1.0, gs.get(v) / pr.get(v), 1.0e-2);
         }
     }
@@ -106,60 +103,13 @@ public class Tests {
 
             /* Normalize pagerank */
             double mean = degree.getMean();
-            for (Vertex v : g.getVertices()) {
+            for (Vertex v : g.getVerticesAsList()) {
                 pagerank.put(v, pagerank.get(v) * mean);
             }
 
             /* Assert if maps not approx. equal */
-            for (Vertex v : g.getVertices()) {
+            for (Vertex v : g.getVerticesAsList()) {
                 Assert.assertEquals("degreeEigenvectorTest - " + g, degree.get(v), pagerank.get(v), 1.0e-2);
-            }
-        }
-    }
-
-    /**
-     * <p>This test demonstrates that {@link FloydWarshall} yields the same result as multiple executions of
-     * {@link Dijkstra}.</p>
-     */
-    @Test
-    public void floydWarshallTest() {
-        int counts[] = {10, 20, 50, 100, 250};
-        double ps[] = {0.05, 0.1, 0.2};
-
-        for (int vertexCount : counts) {
-            for (double p : ps) {
-                /* Create graph and randomize edge weights */
-                Graph g = new RandomGenerator<>(MemoryGraph.class, vertexCount, p).create();
-                GraphOperations.createCircle(g, true);
-                for (Map.Entry<VertexPair, Edge> e : g.getEdges().entrySet()) {
-                    e.getValue().setWeight(RandomHelper.getRandom().nextDouble());
-                }
-
-                /* Floyd-Warshall */
-                Map<VertexPair, Double> distFloyd = FloydWarshall.execute(g);
-
-                /* Dijkstra */
-                HashMap<VertexPair, Double> distDijkstra = new HashMap<>();
-                for (Vertex v : g.getVertices()) {
-                    HashMap<Vertex, Double> temp = Dijkstra.execute(g, v);
-                    for (Map.Entry<Vertex, Double> e : temp.entrySet()) {
-                        distDijkstra.put(new VertexPair(v, e.getKey()), e.getValue());
-                    }
-                }
-
-                /* Length assertion */
-                Assert.assertEquals("FloydWarshallTest - length - " + g, distFloyd.size(), distDijkstra.size());
-
-                /* Value assertions */
-                for (Vertex u : g.getVertices()) {
-                    for (Vertex v : g.getVertices()) {
-                        // TODO: Both Dijkstra and Floyd-Warshall use additions, it is intuitive that there won't be any double rounding issues
-                        // TODO: Also, 10^{-5} is too hardcoded for a quantity that could very well be really close to 10^{-5}
-                        // TODO: It's better to just compare 1 (one) with the ratio of distFloyd/distDijkstra
-                        Assert.assertEquals("FloydWarshallTest - " + g, distFloyd.get(new VertexPair(u, v)),
-                                distDijkstra.get(new VertexPair(u, v)), 1.0e-5);
-                    }
-                }
             }
         }
     }
@@ -193,7 +143,7 @@ public class Tests {
         Graph[] graphs = new Graph[GRAPHS];
         for (int i = 0; i < GRAPHS; i++) {
             graphs[i] = new RandomGenerator<>(MemoryGraph.class, RandomHelper.getRandom().nextInt(50) + 50, RandomHelper.getRandom().nextDouble()).create();
-            GraphOperations.createCircle(graphs[i], true);
+            GraphUtils.createCircle(graphs[i], true);
         }
 
         int vertexCount = 0;
@@ -203,7 +153,7 @@ public class Tests {
             edgeCount += g.getEdgesCount();
         }
 
-        Graph g = GraphOperations.combineGraphs(MemoryGraph.class, graphs);
+        Graph g = GraphUtils.combineGraphs(MemoryGraph.class, graphs);
 
         Assert.assertEquals("combineGraphsTest - vertexCount", vertexCount, g.getVerticesCount());
         Assert.assertEquals("combineGraphsTest - edgeCount", edgeCount, g.getEdgesCount());
@@ -260,7 +210,7 @@ public class Tests {
     @Test
     public void indexIteratorTest() {
         Graph g = new TwoWheelsGenerator<>(MemoryGraph.class, RandomHelper.getRandom().nextInt(25) + 5).create();
-        IndexIterator it = new IndexIterator(g);
+        OrderedVertexIterator it = new OrderedVertexIterator(g);
         int total = 0;
         Vertex pre = null;
         while (it.hasNext()) {
@@ -280,10 +230,10 @@ public class Tests {
     @Test
     public void deGrootTest() {
         Graph g = new RandomGenerator<>(MemoryGraph.class, 100, 0.1).create();
-        GraphOperations.createCircle(g, true);
+        GraphUtils.createCircle(g, true);
 
         GraphState<Double> initialState = new DoubleGraphState(g, 0.0);
-        for (Vertex v : g.getVertices()) {
+        for (Vertex v : g.getVerticesAsList()) {
             initialState.put(v, RandomHelper.getRandom().nextDouble());
         }
 
@@ -298,8 +248,8 @@ public class Tests {
     @Test
     public void deepCopyTest() {
         Graph g = new RandomGenerator<>(MemoryGraph.class, 100, 0.05).create();
-        GraphOperations.createCircle(g, true);
-        Graph e = g.deepCopy(MemoryGraph.class);
+        GraphUtils.createCircle(g, true);
+        Graph e = GraphUtils.deepCopy(MemoryGraph.class, g);
         e.addVertex();
         Assert.assertEquals("deepCopyTest", g.getVerticesCount() + 1, e.getVerticesCount());
         Assert.assertEquals("deepCopyTest", g.getEdgesCount(), e.getEdgesCount());

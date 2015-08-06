@@ -6,7 +6,7 @@ import gr.james.socialinfluence.graph.Edge;
 import gr.james.socialinfluence.graph.Vertex;
 import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
-import gr.james.socialinfluence.util.collections.states.DoubleGraphState;
+import gr.james.socialinfluence.util.states.DoubleGraphState;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class DeGroot {
         while (!stabilized) {
             GraphState<Double> nextState = new DoubleGraphState(g, 0.0);
 
-            for (Vertex v : g.getVertices()) {
+            for (Vertex v : g.getVerticesAsList()) {
                 double vNewValue = 0.0;
                 for (Map.Entry<Vertex, Edge> e : g.getOutEdges(v).entrySet()) {
                     vNewValue = vNewValue + (

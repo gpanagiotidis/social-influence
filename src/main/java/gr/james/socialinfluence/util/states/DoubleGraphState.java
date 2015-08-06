@@ -1,4 +1,4 @@
-package gr.james.socialinfluence.util.collections.states;
+package gr.james.socialinfluence.util.states;
 
 import gr.james.socialinfluence.api.AbstractGraphState;
 import gr.james.socialinfluence.api.Graph;
@@ -13,7 +13,7 @@ public class DoubleGraphState extends AbstractGraphState<Double> {
     }
 
     public DoubleGraphState(Graph g, double e) {
-        for (Vertex v : g.getVertices()) {
+        for (Vertex v : g.getVerticesAsList()) {
             this.put(v, e);
         }
     }
