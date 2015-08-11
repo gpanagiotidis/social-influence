@@ -4,10 +4,7 @@ import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.util.Conditions;
 import gr.james.socialinfluence.util.collections.VertexPair;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * <p>Unmodifiable decorator of a {@link Graph}.</p>
@@ -15,13 +12,12 @@ import java.util.Set;
 public final class ImmutableGraph implements Graph {
     private Graph g;
 
-    /**
-     * <p>Construct a new {@code ImmutableGraph} from a given {@code Graph} g.</p>
-     *
-     * @param g the {@code Graph} to decorate
-     */
-    public ImmutableGraph(Graph g) {
+    private ImmutableGraph(Graph g) {
         this.g = Conditions.requireNonNull(g);
+    }
+
+    public static ImmutableGraph decorate(Graph g) {
+        return new ImmutableGraph(g);
     }
 
     @Override
@@ -42,6 +38,11 @@ public final class ImmutableGraph implements Graph {
     @Override
     public String getGraphType() {
         return this.g.getGraphType();
+    }
+
+    @Override
+    public Iterator<Vertex> iterator() {
+        return this.g.iterator();
     }
 
     @Override
@@ -90,13 +91,13 @@ public final class ImmutableGraph implements Graph {
     }
 
     @Override
-    public double getOutWeightSum(Vertex v) {
-        return this.g.getOutWeightSum(v);
+    public double getOutStrength(Vertex v) {
+        return this.g.getOutStrength(v);
     }
 
     @Override
-    public double getInWeightSum(Vertex v) {
-        return this.g.getInWeightSum(v);
+    public double getInStrength(Vertex v) {
+        return this.g.getInStrength(v);
     }
 
     @Override
@@ -115,13 +116,8 @@ public final class ImmutableGraph implements Graph {
     }
 
     @Override
-    public Set<Vertex> getVertices() {
+    public List<Vertex> getVertices() {
         return this.g.getVertices();
-    }
-
-    @Override
-    public List<Vertex> getVerticesAsList() {
-        return this.g.getVerticesAsList();
     }
 
     @Override
@@ -165,6 +161,16 @@ public final class ImmutableGraph implements Graph {
     }
 
     @Override
+    public void addEdges(Collection<Vertex> among) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addEdges(Vertex... among) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void clear() {
         throw new UnsupportedOperationException();
     }
@@ -185,7 +191,12 @@ public final class ImmutableGraph implements Graph {
     }
 
     @Override
-    public Graph removeEdge(Vertex source, Vertex target, boolean undirected) {
+    public void removeEdges(Collection<Vertex> among) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeEdges(Vertex... among) {
         throw new UnsupportedOperationException();
     }
 }

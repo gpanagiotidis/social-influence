@@ -8,19 +8,20 @@ import gr.james.socialinfluence.util.Conditions;
 import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
 import gr.james.socialinfluence.util.collections.VertexPair;
-import gr.james.socialinfluence.util.exceptions.VertexNotExistsException;
+import gr.james.socialinfluence.util.exceptions.InvalidVertexException;
 
 import java.util.*;
 
 /**
  * <p>Represents a collection of vertices and edges. The graph is weighted, directed and there can't be more than one
  * edge from node {@code i} to node {@code j} (it's not a multigraph).</p>
- * <dl><dt><b>Collections returned:</b></dt><dd>Methods that return collections ({@link Map Maps} or {@link Set Sets})
- * return read-only versions of them, meaning that you can't insert or remove elements. These collections are also not
- * backed by the graph, changes to the graph won't affect these collections after they have been returned; you need to
- * call the method again.</dd></dl>
+ * <dl><dt><b>Collections returned:</b></dt><dd>Methods that return collections ({@link Map Maps}, {@link Set Sets} and
+ * {@link List Lists}) return read-only views of the actual collections they represent, meaning that you can't insert,
+ * remove or reorder elements. These collections may also not be backed by the graph, changes to the graph may not
+ * affect these collections after they have been returned; you need to call the method again. This behavior depends on
+ * the underlying {@code Graph} implementation.</dd></dl>
  */
-public interface Graph {
+public interface Graph extends Iterable<Vertex> {
     String getMeta(String key);
 
     Graph setMeta(String key, String value);
@@ -31,8 +32,25 @@ public interface Graph {
         return this.getMeta(Finals.TYPE_META);
     }
 
+    /**
+     * <p>Get the index-based vertex iterator for this graph. {@code iterator()} will return the same iterator as
+     * {@code getVertices().iterator()} but could be faster depending on the {@code Graph} implementation.</p>
+     *
+     * @return the index-based vertex iterator for this graph
+     */
+    default Iterator<Vertex> iterator() {
+        return this.getVertices().iterator();
+    }
+
+    /**
+     * <p>Checks if the graph contains the specified vertex.</p>
+     *
+     * @param v the {@link Vertex} to check whether it is contained in the graph
+     * @return {@code true} if {@code v} exists in the graph, otherwise {@code false}
+     * @throws NullPointerException if {@code v} is {@code null}
+     */
     default boolean containsVertex(Vertex v) {
-        return this.getVerticesAsList().contains(v);
+        return this.getVertices().contains(Conditions.requireNonNull(v));
     }
 
     /**
@@ -41,8 +59,8 @@ public interface Graph {
      * @param source the source of the edge
      * @param target the target of the edge
      * @return {@code true} if an edge with the specified {@code source} and {@code target} exists, otherwise false
-     * @throws NullPointerException     if either {@code source} or {@code target} is {@code null}
-     * @throws VertexNotExistsException if either {@code source} or {@code target} doesn't belong in the graph
+     * @throws NullPointerException   if either {@code source} or {@code target} is {@code null}
+     * @throws InvalidVertexException if either {@code source} or {@code target} doesn't belong in the graph
      */
     default boolean containsEdge(Vertex source, Vertex target) {
         return findEdge(source, target) != null;
@@ -54,8 +72,8 @@ public interface Graph {
      * @param source the source vertex of the edge
      * @param target the target vertex of the edge
      * @return the {@code Edge} from {@code source} to {@code target}, or {@code null} if there is no such edge
-     * @throws NullPointerException     if either {@code source} or {@code target} is {@code null}
-     * @throws VertexNotExistsException if either {@code source} or {@code target} doesn't belong in the graph
+     * @throws NullPointerException   if either {@code source} or {@code target} is {@code null}
+     * @throws InvalidVertexException if either {@code source} or {@code target} doesn't belong in the graph
      */
     default Edge findEdge(Vertex source, Vertex target) {
         return this.getOutEdges(source).get(Conditions.requireNonNullAndExists(target, this));
@@ -64,7 +82,8 @@ public interface Graph {
     /**
      * <p>Get a {@link Vertex} of this graph based on its index. Index is a deterministic, per-graph attribute between
      * {@code 0} (inclusive) and {@link #getVerticesCount()} (exclusive), indicating the order at which the vertices
-     * were inserted in the graph.</p>
+     * were inserted in the graph. {@code getVertexFromIndex(i)} will return the same vertex as
+     * {@code getVertices().get(i)} but could be faster depending on the {@code Graph} implementation.</p>
      *
      * @param index the index of the vertex
      * @return the vertex reference with the provided index
@@ -72,7 +91,7 @@ public interface Graph {
      *                                   (<tt>index &lt; 0 || index &gt;= getVerticesCount()</tt>)
      */
     default Vertex getVertexFromIndex(int index) {
-        return this.getVerticesAsList().get(index);
+        return this.getVertices().get(index);
     }
 
     /**
@@ -85,16 +104,6 @@ public interface Graph {
         return new RandomVertexIterator(this).next();
     }
 
-    default Map<VertexPair, Edge> getEdges() {
-        Map<VertexPair, Edge> edges = new HashMap<>();
-        for (Vertex v : this.getVerticesAsList()) {
-            for (Map.Entry<Vertex, Edge> e : this.getOutEdges(v).entrySet()) {
-                edges.put(new VertexPair(v, e.getKey()), e.getValue());
-            }
-        }
-        return Collections.unmodifiableMap(edges);
-    }
-
     /**
      * <p>Calculates the total amount of directed edges that this graph has.</p>
      *
@@ -102,7 +111,7 @@ public interface Graph {
      */
     default int getEdgesCount() {
         int count = 0;
-        for (Vertex v : this.getVerticesAsList()) {
+        for (Vertex v : this.getVertices()) {
             count += this.getOutEdges(v).size();
         }
         return count;
@@ -114,8 +123,8 @@ public interface Graph {
      *
      * @param v the vertex to get the outbound edges of
      * @return the outbound edges of {@code v} as a {@code Map<Vertex, Edge>}
-     * @throws NullPointerException     if {@code v} is {@code null}
-     * @throws VertexNotExistsException if {@code v} doesn't belong in the graph
+     * @throws NullPointerException   if {@code v} is {@code null}
+     * @throws InvalidVertexException if {@code v} doesn't belong in the graph
      * @see #getInEdges(Vertex)
      */
     Map<Vertex, Edge> getOutEdges(Vertex v);
@@ -126,8 +135,8 @@ public interface Graph {
      *
      * @param v the vertex to get the inbound edges of
      * @return the inbound edges of {@code v} as a {@code Map<Vertex, Edge>}
-     * @throws NullPointerException     if {@code v} is {@code null}
-     * @throws VertexNotExistsException if {@code v} doesn't belong in the graph
+     * @throws NullPointerException   if {@code v} is {@code null}
+     * @throws InvalidVertexException if {@code v} doesn't belong in the graph
      * @see #getOutEdges(Vertex)
      */
     Map<Vertex, Edge> getInEdges(Vertex v);
@@ -137,11 +146,11 @@ public interface Graph {
      *
      * @param v the vertex
      * @return the sum of weights of all outbound edges of vertex {@code v}
-     * @throws NullPointerException     if {@code v} is {@code null}
-     * @throws VertexNotExistsException if {@code v} doesn't belong in the graph
-     * @see #getInWeightSum(Vertex)
+     * @throws NullPointerException   if {@code v} is {@code null}
+     * @throws InvalidVertexException if {@code v} doesn't belong in the graph
+     * @see #getInStrength(Vertex)
      */
-    default double getOutWeightSum(Vertex v) {
+    default double getOutStrength(Vertex v) {
         return Helper.getWeightSum(this.getOutEdges(v).values());
     }
 
@@ -150,11 +159,11 @@ public interface Graph {
      *
      * @param v the vertex
      * @return the sum of weights of all inbound edges of vertex {@code v}
-     * @throws NullPointerException     if {@code v} is {@code null}
-     * @throws VertexNotExistsException if {@code v} doesn't belong in the graph
-     * @see #getOutWeightSum(Vertex)
+     * @throws NullPointerException   if {@code v} is {@code null}
+     * @throws InvalidVertexException if {@code v} doesn't belong in the graph
+     * @see #getOutStrength(Vertex)
      */
-    default double getInWeightSum(Vertex v) {
+    default double getInStrength(Vertex v) {
         return Helper.getWeightSum(this.getInEdges(v).values());
     }
 
@@ -164,8 +173,8 @@ public interface Graph {
      *
      * @param v the vertex
      * @return the outbound degree of vertex {@code v}
-     * @throws NullPointerException     if {@code v} is {@code null}
-     * @throws VertexNotExistsException if {@code v} doesn't belong in the graph
+     * @throws NullPointerException   if {@code v} is {@code null}
+     * @throws InvalidVertexException if {@code v} doesn't belong in the graph
      * @see #getInDegree(Vertex)
      */
     default int getOutDegree(Vertex v) {
@@ -178,8 +187,8 @@ public interface Graph {
      *
      * @param v the vertex
      * @return the inbound degree of vertex {@code v}
-     * @throws NullPointerException     if {@code v} is {@code null}
-     * @throws VertexNotExistsException if {@code v} doesn't belong in the graph
+     * @throws NullPointerException   if {@code v} is {@code null}
+     * @throws InvalidVertexException if {@code v} doesn't belong in the graph
      * @see #getOutDegree(Vertex)
      */
     default int getInDegree(Vertex v) {
@@ -219,30 +228,21 @@ public interface Graph {
     }
 
     /**
-     * <p>Returns an unmodifiable Set of vertices that this graph consists of.</p>
-     * <dl><dt><b>Complexity:</b></dt><dd>O(1)</dd></dl>
-     *
-     * @return the list of vertices of this graph
-     * @deprecated You should use {@link #getVerticesAsList()} instead.
-     */
-    @Deprecated
-    Set<Vertex> getVertices();
-
-    /**
      * <p>Returns an list view of the vertices contained in this graph. The list is indexed at the order at which the
      * vertices were inserted in the graph.</p>
      *
      * @return an unmodifiable list of vertices in this graph
      */
-    List<Vertex> getVerticesAsList();
+    List<Vertex> getVertices();
 
     /**
-     * <p>Returns the number of vertices in this graph.</p>
+     * <p>Returns the number of vertices in this graph. {@code getVerticesCount()} will return the same value as
+     * {@code getVertices().size()} but could be faster depending on the {@code Graph} implementation.</p>
      *
      * @return the number of vertices in this graph
      */
     default int getVerticesCount() {
-        return this.getVerticesAsList().size();
+        return this.getVertices().size();
     }
 
     default Vertex getRandomOutEdge(Vertex from, boolean weighted) {
@@ -270,6 +270,16 @@ public interface Graph {
     }
 
     /**
+     * <p>Insert the specified vertex {@code v} to the graph. If the vertex is already contained in the graph, this
+     * method is a no-op.</p>
+     *
+     * @param v the vertex to insert to the graph
+     * @return {@code false} if the graph previously already contained the vertex, otherwise {@code true}
+     * @throws NullPointerException if {@code v} is {@code null}
+     */
+    boolean addVertex(Vertex v);
+
+    /**
      * <p>Inserts a new unconnected vertex to the graph and returns it. Use {@link #addVertices(int)} for bulk inserts.
      * </p>
      *
@@ -280,16 +290,6 @@ public interface Graph {
         this.addVertex(v);
         return v;
     }
-
-    /**
-     * <p>Insert the specified vertex {@code v} to the graph. If the vertex is already contained in the graph, this
-     * method is a no-op.</p>
-     *
-     * @param v the vertex to insert to the graph
-     * @return {@code false} if the graph previously already contained the vertex, otherwise {@code true}
-     * @throws NullPointerException if {@code v} is {@code null}
-     */
-    boolean addVertex(Vertex v);
 
     /**
      * <p>Insert {@code count} unconnected vertices in the graph.</p>
@@ -330,18 +330,55 @@ public interface Graph {
      * <p>Removes all vertices and all edges from this graph.</p>
      */
     default void clear() {
-        this.removeVertices(this.getVerticesAsList());
+        this.removeVertices(this.getVertices());
     }
 
+    /**
+     * <p>Creates an edge with the specified {@code source} and {@code target}.</p>
+     *
+     * @param source the source of the edge
+     * @param target the target of the edge
+     * @return the {@code Edge} object of the newly added edge
+     * @throws NullPointerException   if either {@code source} or {@code target} is {@code null}
+     * @throws InvalidVertexException if either {@code source} or {@code target} doesn't belong in the graph
+     */
+    // TODO: What if edge already exists?
     Edge addEdge(Vertex source, Vertex target);
 
-    default Set<Edge> addEdge(Vertex source, Vertex target, boolean undirected) {
-        Set<Edge> addedEdges = new HashSet<>();
-        addedEdges.add(this.addEdge(source, target));
-        if (undirected) {
-            addedEdges.add(this.addEdge(target, source));
+    /**
+     * <p>Connects every vertex in {@code among} with every other vertex in {@code among}; self-loops are excluded from
+     * the operation. After the operation, a complete subgraph of {@code among} will be created. If {@code among} only
+     * contains 2 (unique) vertices {@code s} and {@code t}, edges {@code (s,t)} and {@code (t,s)} will be created. If
+     * {@code among} only contains 1 (unique) vertex or less, it's a no-op.</p>
+     *
+     * @param among a collection of vertices of which each pair will be connected; you should prefer a collection with a
+     *              fast {@code next()} implementation
+     * @throws NullPointerException   if any vertex in {@code among} is {@code null}
+     * @throws InvalidVertexException if any vertex in {@code among} doesn't belong in the graph
+     */
+    default void addEdges(Collection<Vertex> among) {
+        for (Vertex v : among) {
+            for (Vertex u : among) {
+                if (!v.equals(u)) {
+                    this.addEdge(v, u);
+                }
+            }
         }
-        return Collections.unmodifiableSet(addedEdges);
+    }
+
+    /**
+     * <p>Connects every vertex in {@code among} with every other vertex in {@code among}; self-loops are excluded from
+     * the operation. After the operation, a complete subgraph of {@code among} will be created. If {@code among} only
+     * contains 2 (unique) vertices {@code s} and {@code t}, edges {@code (s,t)} and {@code (t,s)} will be created. If
+     * {@code among} only contains 1 (unique) vertex or less, it's a no-op.</p>
+     *
+     * @param among the vertices as variable arguments to connect each of its pairs; you should prefer a collection with
+     *              a fast {@code next()} implementation
+     * @throws NullPointerException   if any vertex in {@code among} is {@code null}
+     * @throws InvalidVertexException if any vertex in {@code among} doesn't belong in the graph
+     */
+    default void addEdges(Vertex... among) {
+        this.addEdges(Arrays.asList(among));
     }
 
     /**
@@ -350,21 +387,21 @@ public interface Graph {
      * @param source the source of the edge
      * @param target the target of the edge
      * @return {@code true} if there was previously a directed edge {@code (source,target)}, otherwise {@code false}
-     * @throws NullPointerException     if either {@code source} or {@code target} is {@code null}
-     * @throws VertexNotExistsException if either {@code source} or {@code target} doesn't belong in the graph
+     * @throws NullPointerException   if either {@code source} or {@code target} is {@code null}
+     * @throws InvalidVertexException if either {@code source} or {@code target} doesn't belong in the graph
      */
     boolean removeEdge(Vertex source, Vertex target);
 
     /**
      * <p>Removes all the (existing) edges of which both the source and the target are contained in {@code among}.
-     * Self-loops are excluded from the operation. If {@code among} only contains 2 vertices {@code s} and {@code t},
-     * edges {@code (s,t)} and {@code (t,s)} will be removed (assuming they exist). If {@code among} only contains 1
-     * vertex, it's a no-op.</p>
+     * Self-loops are excluded from the operation. If {@code among} only contains 2 (unique) vertices {@code s} and
+     * {@code t}, edges {@code (s,t)} and {@code (t,s)} will be removed (assuming they exist). If {@code among} only
+     * contains 1 (unique) vertex or less, it's a no-op.</p>
      *
      * @param among a collection of vertices to strip the edges from; you should prefer a collection with a fast
      *              {@code next()} implementation
-     * @throws NullPointerException     if any vertex in {@code among} is {@code null}
-     * @throws VertexNotExistsException if any vertex in {@code among} doesn't belong in the graph
+     * @throws NullPointerException   if any vertex in {@code among} is {@code null}
+     * @throws InvalidVertexException if any vertex in {@code among} doesn't belong in the graph
      */
     default void removeEdges(Collection<Vertex> among) {
         for (Vertex v : among) {
@@ -378,27 +415,37 @@ public interface Graph {
 
     /**
      * <p>Removes all the (existing) edges of which both the source and the target are contained in {@code among}.
-     * Self-loops are excluded from the operation. If {@code among} only contains 2 vertices {@code s} and {@code t},
-     * edges {@code (s,t)} and {@code (t,s)} will be removed (assuming they exist). If {@code among} only contains 1
-     * vertex, it's a no-op.</p>
+     * Self-loops are excluded from the operation. If {@code among} only contains 2 (unique) vertices {@code s} and
+     * {@code t}, edges {@code (s,t)} and {@code (t,s)} will be removed (assuming they exist). If {@code among} only
+     * contains 1 (unique) vertex or less, it's a no-op.</p>
      *
      * @param among the vertices as variable arguments to strip the edges from; you should prefer a collection with a
      *              fast {@code next()} implementation
-     * @throws NullPointerException     if any vertex in {@code among} is {@code null}
-     * @throws VertexNotExistsException if any vertex in {@code among} doesn't belong in the graph
+     * @throws NullPointerException   if any vertex in {@code among} is {@code null}
+     * @throws InvalidVertexException if any vertex in {@code among} doesn't belong in the graph
      */
     default void removeEdges(Vertex... among) {
         this.removeEdges(Arrays.asList(among));
     }
 
     @Deprecated
-    default Graph removeEdge(Vertex source, Vertex target, boolean undirected) {
-        if (undirected) {
-            this.removeEdge(source, target);
-            this.removeEdge(target, source);
-        } else {
-            this.removeEdge(source, target);
+    default Map<VertexPair, Edge> getEdges() {
+        Map<VertexPair, Edge> edges = new HashMap<>();
+        for (Vertex v : this.getVertices()) {
+            for (Map.Entry<Vertex, Edge> e : this.getOutEdges(v).entrySet()) {
+                edges.put(new VertexPair(v, e.getKey()), e.getValue());
+            }
         }
-        return this;
+        return Collections.unmodifiableMap(edges);
+    }
+
+    @Deprecated
+    default Set<Edge> addEdge(Vertex source, Vertex target, boolean undirected) {
+        Set<Edge> addedEdges = new HashSet<>();
+        addedEdges.add(this.addEdge(source, target));
+        if (undirected) {
+            addedEdges.add(this.addEdge(target, source));
+        }
+        return Collections.unmodifiableSet(addedEdges);
     }
 }

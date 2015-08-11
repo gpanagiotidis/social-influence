@@ -103,12 +103,7 @@ public class MemoryGraph extends AbstractGraph {
     }
 
     @Override
-    public Set<Vertex> getVertices() {
-        return Collections.unmodifiableSet(this.m.keySet());
-    }
-
-    @Override
-    public List<Vertex> getVerticesAsList() {
+    public List<Vertex> getVertices() {
         if (this.vertexCache == null) {
             this.vertexCache = new ArrayList<>(this.m.keySet());
         }
