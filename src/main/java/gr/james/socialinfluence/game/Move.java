@@ -6,12 +6,13 @@ import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.exceptions.WeightNonPositiveException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Move implements Iterable<Vertex> {
     private Map<Vertex, Double> m;
 
     public Move() {
-        this.m = new TreeMap<>();
+        this.m = new HashMap<>();
     }
 
     public Move(Vertex... args) {
@@ -27,7 +28,7 @@ public class Move implements Iterable<Vertex> {
 
     public double getWeightSum() {
         double sum = 0.0;
-        for (Double e : this.m.values()) {
+        for (double e : this.m.values()) {
             sum += e;
         }
         return sum;
@@ -35,6 +36,15 @@ public class Move implements Iterable<Vertex> {
 
     public double getWeight(Vertex v) {
         return this.m.get(v);
+    }
+
+    /**
+     * <p>Get an unmodifiable view of the vertices contained in this move. Weights are ignored in this operation.</p>
+     *
+     * @return an unmodifiable {@code Set} of vertices contained in this move
+     */
+    public Set<Vertex> vertexSet() {
+        return Collections.unmodifiableSet(this.m.keySet());
     }
 
     /**
@@ -102,7 +112,9 @@ public class Move implements Iterable<Vertex> {
 
     @Override
     public String toString() {
-        return this.m.toString();
+        return "{" + this.m.entrySet().stream().sorted((o1, o2) -> o1.getKey().compareTo(o2.getKey()))
+                .map(i -> String.format("%d [%.2f]", i.getKey().getId(), i.getValue()))
+                .collect(Collectors.joining(", ")) + "}";
     }
 
     @Override

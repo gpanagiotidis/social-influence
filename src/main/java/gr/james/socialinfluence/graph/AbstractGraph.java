@@ -1,12 +1,15 @@
 package gr.james.socialinfluence.graph;
 
 import gr.james.socialinfluence.api.Graph;
+import gr.james.socialinfluence.util.Conditions;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 public abstract class AbstractGraph implements Graph {
-    protected Map<String, String> meta;
+    private Map<String, String> meta;
 
     public AbstractGraph() {
         this.meta = new TreeMap<>();
@@ -14,23 +17,31 @@ public abstract class AbstractGraph implements Graph {
 
     @Override
     public final String getMeta(String key) {
-        return this.meta.get(key);
+        return this.meta.get(Conditions.requireNonNull(key));
     }
 
     @Override
-    public final Graph setMeta(String key, String value) {
-        this.meta.put(key, value);
-        return this;
+    public final String setMeta(String key, String value) {
+        return this.meta.put(Conditions.requireNonNull(key), Conditions.requireNonNull(value));
     }
 
     @Override
-    public Graph clearMeta() {
+    public String removeMeta(String key) {
+        return this.meta.remove(Conditions.requireNonNull(key));
+    }
+
+    @Override
+    public Set<String> metaKeySet() {
+        return Collections.unmodifiableSet(this.meta.keySet());
+    }
+
+    @Override
+    public void clearMeta() {
         this.meta.clear();
-        return this;
     }
 
     @Override
     public String toString() {
-        return String.format("{type=%s, meta=%s}", this.getClass().getSimpleName(), this.meta);
+        return String.format("{container=%s, meta=%s}", this.getClass().getSimpleName(), this.meta);
     }
 }

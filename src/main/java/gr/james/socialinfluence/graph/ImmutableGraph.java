@@ -2,6 +2,7 @@ package gr.james.socialinfluence.graph;
 
 import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.util.Conditions;
+import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.collections.VertexPair;
 
 import java.util.*;
@@ -17,7 +18,12 @@ public final class ImmutableGraph implements Graph {
     }
 
     public static ImmutableGraph decorate(Graph g) {
-        return new ImmutableGraph(g);
+        if (g instanceof ImmutableGraph) {
+            Finals.LOG.debug("Graph {} is already an instance of ImmutableGraph", g);
+            return (ImmutableGraph) g;
+        } else {
+            return new ImmutableGraph(g);
+        }
     }
 
     @Override
@@ -26,18 +32,33 @@ public final class ImmutableGraph implements Graph {
     }
 
     @Override
-    public Graph setMeta(String key, String value) {
-        throw new UnsupportedOperationException();
+    public String setMeta(String key, String value) {
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
-    public Graph clearMeta() {
-        throw new UnsupportedOperationException();
+    public String removeMeta(String key) {
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
+    }
+
+    @Override
+    public Set<String> metaKeySet() {
+        return this.g.metaKeySet();
+    }
+
+    @Override
+    public void clearMeta() {
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public String getGraphType() {
         return this.g.getGraphType();
+    }
+
+    @Override
+    public void setGraphType(String type) {
+        this.g.setGraphType(type);
     }
 
     @Override
@@ -137,66 +158,66 @@ public final class ImmutableGraph implements Graph {
 
     @Override
     public Vertex addVertex() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public boolean addVertex(Vertex v) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public List<Vertex> addVertices(int count) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public boolean removeVertex(Vertex v) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public void removeVertices(Collection<Vertex> vertices) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public void addEdges(Collection<Vertex> among) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public void addEdges(Vertex... among) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public Edge addEdge(Vertex source, Vertex target) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Set<Edge> addEdge(Vertex source, Vertex target, boolean undirected) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public boolean removeEdge(Vertex source, Vertex target) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public void removeEdges(Collection<Vertex> among) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
     }
 
     @Override
     public void removeEdges(Vertex... among) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(Finals.E_IMMUTABLE_GRAPH);
+    }
+
+    @Override
+    public String toString() {
+        return this.g.toString();
     }
 }

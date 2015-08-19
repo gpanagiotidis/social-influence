@@ -1,12 +1,12 @@
 package gr.james.socialinfluence.api;
 
 import gr.james.socialinfluence.algorithms.distance.Dijkstra;
-import gr.james.socialinfluence.algorithms.iterators.RandomVertexIterator;
 import gr.james.socialinfluence.graph.Edge;
 import gr.james.socialinfluence.graph.Vertex;
 import gr.james.socialinfluence.util.Conditions;
 import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
+import gr.james.socialinfluence.util.RandomHelper;
 import gr.james.socialinfluence.util.collections.VertexPair;
 import gr.james.socialinfluence.util.exceptions.InvalidVertexException;
 
@@ -21,36 +21,13 @@ import java.util.*;
  * affect these collections after they have been returned; you need to call the method again. This behavior depends on
  * the underlying {@code Graph} implementation.</dd></dl>
  */
-public interface Graph extends Iterable<Vertex> {
-    String getMeta(String key);
-
-    Graph setMeta(String key, String value);
-
-    Graph clearMeta();
-
+public interface Graph extends Iterable<Vertex>, Metadata {
     default String getGraphType() {
-        return this.getMeta(Finals.TYPE_META);
+        return getMeta(Finals.TYPE_META);
     }
 
-    /**
-     * <p>Get the index-based vertex iterator for this graph. {@code iterator()} will return the same iterator as
-     * {@code getVertices().iterator()} but could be faster depending on the {@code Graph} implementation.</p>
-     *
-     * @return the index-based vertex iterator for this graph
-     */
-    default Iterator<Vertex> iterator() {
-        return this.getVertices().iterator();
-    }
-
-    /**
-     * <p>Checks if the graph contains the specified vertex.</p>
-     *
-     * @param v the {@link Vertex} to check whether it is contained in the graph
-     * @return {@code true} if {@code v} exists in the graph, otherwise {@code false}
-     * @throws NullPointerException if {@code v} is {@code null}
-     */
-    default boolean containsVertex(Vertex v) {
-        return this.getVertices().contains(Conditions.requireNonNull(v));
+    default void setGraphType(String type) {
+        setMeta(Finals.TYPE_META, type);
     }
 
     /**
@@ -58,7 +35,8 @@ public interface Graph extends Iterable<Vertex> {
      *
      * @param source the source of the edge
      * @param target the target of the edge
-     * @return {@code true} if an edge with the specified {@code source} and {@code target} exists, otherwise false
+     * @return {@code true} if an edge with the specified {@code source} and {@code target} exists, otherwise
+     * {@code false}
      * @throws NullPointerException   if either {@code source} or {@code target} is {@code null}
      * @throws InvalidVertexException if either {@code source} or {@code target} doesn't belong in the graph
      */
@@ -80,28 +58,13 @@ public interface Graph extends Iterable<Vertex> {
     }
 
     /**
-     * <p>Get a {@link Vertex} of this graph based on its index. Index is a deterministic, per-graph attribute between
-     * {@code 0} (inclusive) and {@link #getVerticesCount()} (exclusive), indicating the order at which the vertices
-     * were inserted in the graph. {@code getVertexFromIndex(i)} will return the same vertex as
-     * {@code getVertices().get(i)} but could be faster depending on the {@code Graph} implementation.</p>
-     *
-     * @param index the index of the vertex
-     * @return the vertex reference with the provided index
-     * @throws IndexOutOfBoundsException if the index is out of range
-     *                                   (<tt>index &lt; 0 || index &gt;= getVerticesCount()</tt>)
-     */
-    default Vertex getVertexFromIndex(int index) {
-        return this.getVertices().get(index);
-    }
-
-    /**
      * <p>Return a uniformly distributed random vertex of this graph.</p>
      *
-     * @return a random vertex of this graph
+     * @return a random vertex contained in this graph
      */
     default Vertex getRandomVertex() {
         // TODO: Return null or exception if the graph is empty
-        return new RandomVertexIterator(this).next();
+        return getVertexFromIndex(RandomHelper.getRandom().nextInt(getVerticesCount()));
     }
 
     /**
@@ -196,44 +159,24 @@ public interface Graph extends Iterable<Vertex> {
     }
 
     /**
-     * <p>Returns true if for every edge with source S and target T where S and T are different,
-     * there is always an edge with source T and target S.</p>
-     *
-     * @return true if the graph is undirected, otherwise false
-     */
-    @Deprecated
-    default boolean isUndirected() {
-        // TODO: Implement
-        /*ArrayList<VertexPair> edgeList = new ArrayList<>();
-        for (VertexPair e : this.getEdges().keySet()) {
-            Vertex v = e.getSource();
-            Vertex w = e.getTarget();
-            if (!v.equals(w)) {
-                int indexOfOpposite = -1;
-                for (int i = 0; i < edgeList.size(); i++) {
-                    if (edgeList.get(i)[0].equals(w) && edgeList.get(i)[1].equals(v)) {
-                        indexOfOpposite = i;
-                        break;
-                    }
-                }
-                if (indexOfOpposite > -1) {
-                    edgeList.remove(indexOfOpposite);
-                } else {
-                    edgeList.add(new Vertex[]{v, w});
-                }
-            }
-        }
-        return edgeList.size() == 0;*/
-        return false;
-    }
-
-    /**
      * <p>Returns an list view of the vertices contained in this graph. The list is indexed at the order at which the
      * vertices were inserted in the graph.</p>
      *
      * @return an unmodifiable list of vertices in this graph
      */
     List<Vertex> getVertices();
+
+    /**
+     * <p>Checks if the graph contains the specified vertex. {@code containsVertex(v)} will return the same value as
+     * {@code getVertices().contains(v)} but could be faster depending on the {@code Graph} implementation.</p>
+     *
+     * @param v the {@link Vertex} to check whether it is contained in the graph
+     * @return {@code true} if {@code v} exists in the graph, otherwise {@code false}
+     * @throws NullPointerException if {@code v} is {@code null}
+     */
+    default boolean containsVertex(Vertex v) {
+        return this.getVertices().contains(Conditions.requireNonNull(v));
+    }
 
     /**
      * <p>Returns the number of vertices in this graph. {@code getVerticesCount()} will return the same value as
@@ -245,28 +188,30 @@ public interface Graph extends Iterable<Vertex> {
         return this.getVertices().size();
     }
 
-    default Vertex getRandomOutEdge(Vertex from, boolean weighted) {
-        HashMap<Vertex, Double> weightMap = new HashMap<>();
-        Map<Vertex, Edge> outEdges = this.getOutEdges(from);
-        for (Map.Entry<Vertex, Edge> e : outEdges.entrySet()) {
-            weightMap.put(e.getKey(), (weighted ? e.getValue().getWeight() : 1.0));
-        }
-        Set<Vertex> edges = Helper.weightedRandom(weightMap, 1);
-        return edges.iterator().next();
+    /**
+     * <p>Get a {@link Vertex} of this graph based on its index. Index is a deterministic, per-graph attribute between
+     * {@code 0} (inclusive) and {@link #getVerticesCount()} (exclusive), indicating the order at which the vertices
+     * were inserted in the graph. {@code getVertexFromIndex(i)} will return the same vertex as
+     * {@code getVertices().get(i)} but could be faster depending on the {@code Graph} implementation.</p>
+     *
+     * @param index the index of the vertex
+     * @return the vertex reference with the provided index
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   (<tt>index &lt; 0 || index &gt;= getVerticesCount()</tt>)
+     */
+    default Vertex getVertexFromIndex(int index) {
+        return this.getVertices().get(index);
     }
 
-    default double getDiameter() {
-        // TODO: Should return a list/path/walk of vertices to show both the weight sum and the steps
-        Map<VertexPair, Double> distanceMap = Dijkstra.executeDistanceMap(this);
-
-        double diameter = 0;
-        for (double d : distanceMap.values()) {
-            if (d > diameter) {
-                diameter = d;
-            }
-        }
-
-        return diameter;
+    /**
+     * <p>Get the read-only, index-based, vertex iterator for this graph. {@code iterator()} will return the same
+     * iterator as {@code getVertices().iterator()} but could be faster depending on the {@code Graph} implementation.
+     * </p>
+     *
+     * @return the index-based vertex iterator for this graph
+     */
+    default Iterator<Vertex> iterator() {
+        return this.getVertices().iterator();
     }
 
     /**
@@ -334,15 +279,15 @@ public interface Graph extends Iterable<Vertex> {
     }
 
     /**
-     * <p>Creates an edge with the specified {@code source} and {@code target}.</p>
+     * <p>Creates an edge with the specified {@code source} and {@code target}. If an edge with the same {@code source}
+     * and {@code target} exists, nothing happens.</p>
      *
      * @param source the source of the edge
      * @param target the target of the edge
-     * @return the {@code Edge} object of the newly added edge
+     * @return the {@code Edge} object of the newly added edge, or {@code null} if an edge already exists
      * @throws NullPointerException   if either {@code source} or {@code target} is {@code null}
      * @throws InvalidVertexException if either {@code source} or {@code target} doesn't belong in the graph
      */
-    // TODO: What if edge already exists?
     Edge addEdge(Vertex source, Vertex target);
 
     /**
@@ -428,6 +373,32 @@ public interface Graph extends Iterable<Vertex> {
         this.removeEdges(Arrays.asList(among));
     }
 
+    default Vertex getRandomOutEdge(Vertex from, boolean weighted) {
+        // TODO: Documentation and probably return a pair or vertex and edge
+        // TODO: What if no out edge?
+        Map<Vertex, Double> weightMap = new HashMap<>();
+        Map<Vertex, Edge> outEdges = this.getOutEdges(from);
+        for (Map.Entry<Vertex, Edge> e : outEdges.entrySet()) {
+            weightMap.put(e.getKey(), (weighted ? e.getValue().getWeight() : 1.0));
+        }
+        Set<Vertex> edges = Helper.weightedRandom(weightMap, 1);
+        return edges.iterator().next();
+    }
+
+    default double getDiameter() {
+        // TODO: Should return a list/path/walk of vertices to show both the weight sum and the steps
+        Map<VertexPair, Double> distanceMap = Dijkstra.executeDistanceMap(this);
+
+        double diameter = 0;
+        for (double d : distanceMap.values()) {
+            if (d > diameter) {
+                diameter = d;
+            }
+        }
+
+        return diameter;
+    }
+
     @Deprecated
     default Map<VertexPair, Edge> getEdges() {
         Map<VertexPair, Edge> edges = new HashMap<>();
@@ -439,13 +410,35 @@ public interface Graph extends Iterable<Vertex> {
         return Collections.unmodifiableMap(edges);
     }
 
+    /**
+     * <p>Returns true if for every edge with source S and target T where S and T are different,
+     * there is always an edge with source T and target S.</p>
+     *
+     * @return {@code true} if the graph is undirected, otherwise {@code false}
+     */
     @Deprecated
-    default Set<Edge> addEdge(Vertex source, Vertex target, boolean undirected) {
-        Set<Edge> addedEdges = new HashSet<>();
-        addedEdges.add(this.addEdge(source, target));
-        if (undirected) {
-            addedEdges.add(this.addEdge(target, source));
+    default boolean isUndirected() {
+        // TODO: Implement
+        /*ArrayList<VertexPair> edgeList = new ArrayList<>();
+        for (VertexPair e : this.getEdges().keySet()) {
+            Vertex v = e.getSource();
+            Vertex w = e.getTarget();
+            if (!v.equals(w)) {
+                int indexOfOpposite = -1;
+                for (int i = 0; i < edgeList.size(); i++) {
+                    if (edgeList.get(i)[0].equals(w) && edgeList.get(i)[1].equals(v)) {
+                        indexOfOpposite = i;
+                        break;
+                    }
+                }
+                if (indexOfOpposite > -1) {
+                    edgeList.remove(indexOfOpposite);
+                } else {
+                    edgeList.add(new Vertex[]{v, w});
+                }
+            }
         }
-        return Collections.unmodifiableSet(addedEdges);
+        return edgeList.size() == 0;*/
+        return false;
     }
 }

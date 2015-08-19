@@ -4,6 +4,7 @@ import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.graph.ImmutableGraph;
 import gr.james.socialinfluence.util.Conditions;
 import gr.james.socialinfluence.util.Finals;
+import gr.james.socialinfluence.util.Helper;
 import gr.james.socialinfluence.util.exceptions.GraphException;
 import org.slf4j.Logger;
 
@@ -13,14 +14,16 @@ import java.util.Map;
 
 public abstract class Player {
     protected static final Logger log = Finals.LOG;
-    protected Map<String, String> options = new HashMap<>(); // TODO: Convert this field to private
+    private Map<String, String> options = new HashMap<>();
     private boolean interrupted = false;
 
     /**
      * <p>Constructs a {@code Player} with default options.</p>
      */
     public Player() {
-        putDefaultOptions();
+        for (Map.Entry<String, String> s : defaultOptions().entrySet()) {
+            options.put(s.getKey(), s.getValue());
+        }
     }
 
     /**
@@ -50,21 +53,35 @@ public abstract class Player {
         this.interrupted = true;
     }
 
-    // TODO: Convert this to protected so it's not visible on mains etc (but then PlayerRunnable would complain)
-    public abstract void suggestMove(ImmutableGraph g, GameDefinition d, MovePointer movePtr);
+    protected abstract void suggestMove(Graph g, GameDefinition d, MovePointer movePtr);
 
+    /**
+     * <p>Invokes {@link #suggestMove(Graph, GameDefinition, MovePointer)} on a separate thread.</p>
+     *
+     * @param g The {@link Graph} object that will be passed in {@code suggestMove()} as {@link ImmutableGraph}
+     * @param d The {@link GameDefinition} object that will be passed directly in {@code suggestMove()}
+     * @return the last move that was submitted in time from the player
+     */
     public final Move getMove(Graph g, GameDefinition d) {
-        ImmutableGraph ig = ImmutableGraph.decorate(g);
-        PlayerRunnable runnable = new PlayerRunnable(this, ig, d);
+        final Graph finalGraph = ImmutableGraph.decorate(g);
+        final MovePointer movePtr = new MovePointer();
 
-        Move m = null;
+        Thread t = new Thread(() -> {
+            try {
+                suggestMove(finalGraph, d, movePtr);
+            } catch (Exception e) {
+                Finals.LOG.warn(Finals.L_PLAYER_EXCEPTION, this.getClass().getSimpleName(), finalGraph, d,
+                        Helper.getExceptionString(e));
+            }
+        });
+
+        Move m;
 
         try {
-            Thread t = new Thread(runnable);
             t.start();
             t.join(d.getExecution());
             this.interrupt();
-            m = runnable.getMovePointer().recall();
+            m = movePtr.recall();
             int count = 0;
             while (t.isAlive()) {
                 if (count > 0) {
@@ -75,14 +92,22 @@ public abstract class Player {
             }
             this.isInterrupted(); // This is called to clear the interrupt flag
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            throw Helper.convertCheckedException(e);
         }
 
         return m;
     }
 
-    public Player putDefaultOptions() {
-        return this;
+    protected Map<String, String> defaultOptions() {
+        return Collections.<String, String>emptyMap();
+    }
+
+    public final String getOption(String name) {
+        Conditions.requireNonNull(name);
+        if (!this.options.containsKey(name)) {
+            throw new GraphException(Finals.E_PLAYER_NO_PARAMETER, this.getClass().getSimpleName(), name);
+        }
+        return this.options.get(name);
     }
 
     public final Player setOption(String name, String value) {
@@ -98,5 +123,10 @@ public abstract class Player {
 
     public final Map<String, String> getOptions() {
         return Collections.unmodifiableMap(this.options);
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
     }
 }

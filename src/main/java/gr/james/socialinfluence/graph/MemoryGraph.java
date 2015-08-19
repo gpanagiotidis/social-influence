@@ -2,14 +2,12 @@ package gr.james.socialinfluence.graph;
 
 import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.util.Conditions;
-import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.collections.Pair;
-import gr.james.socialinfluence.util.exceptions.GraphException;
 
 import java.util.*;
 
 /**
- * <p>Represents an in-memory {@link Graph}, implemented using adjacency lists.</p>
+ * <p>Represents an in-memory {@link Graph}, implemented using adjacency lists. Suitable for sparse graphs.</p>
  */
 public class MemoryGraph extends AbstractGraph {
     private Map<Vertex, Pair<Map<Vertex, Edge>>> m;
@@ -25,7 +23,7 @@ public class MemoryGraph extends AbstractGraph {
 
     @Override
     public boolean containsVertex(Vertex v) {
-        return this.m.containsKey(v);
+        return this.m.containsKey(Conditions.requireNonNull(v));
     }
 
     @Override
@@ -66,11 +64,8 @@ public class MemoryGraph extends AbstractGraph {
 
     @Override
     public Edge addEdge(Vertex source, Vertex target) {
-        if (!this.containsVertex(source) || !this.containsVertex(target)) {
-            throw new GraphException(Finals.E_GRAPH_EDGE_DIFFERENT);
-        }
-        Edge e = new Edge();
-        if (!this.m.get(source).getFirst().containsKey(target)) {
+        if (!containsEdge(source, target)) {
+            Edge e = new Edge();
             this.m.get(source).getFirst().put(target, e);
             this.m.get(target).getSecond().put(source, e);
             return e;

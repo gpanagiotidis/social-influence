@@ -4,7 +4,6 @@ import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.api.GraphGenerator;
 import gr.james.socialinfluence.graph.Vertex;
 import gr.james.socialinfluence.util.Conditions;
-import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
 import gr.james.socialinfluence.util.RandomHelper;
 
@@ -31,7 +30,7 @@ public class WattsStrogatzGenerator<T extends Graph> implements GraphGenerator<T
         g.addVertices(n);
         for (int i = 0; i < n; i++) {
             for (int j = 1; j <= k / 2; j++) {
-                g.addEdge(g.getVertexFromIndex(i), g.getVertexFromIndex((i + j) % n), true);
+                g.addEdges(g.getVertexFromIndex(i), g.getVertexFromIndex((i + j) % n));
             }
         }
 
@@ -45,15 +44,15 @@ public class WattsStrogatzGenerator<T extends Graph> implements GraphGenerator<T
                     do {
                         sub = g.getRandomVertex();
                     } while (sub == a || sub == b || g.containsEdge(a, sub));
-                    g.addEdge(a, sub, true);
+                    g.addEdges(a, sub);
                 }
             }
         }
 
-        g.setMeta(Finals.TYPE_META, "WattsStrogatz")
-                .setMeta("n", String.valueOf(n))
-                .setMeta("k", String.valueOf(k))
-                .setMeta("b", String.valueOf(b));
+        g.setGraphType("WattsStrogatz");
+        g.setMeta("n", String.valueOf(n));
+        g.setMeta("k", String.valueOf(k));
+        g.setMeta("b", String.valueOf(b));
 
         return g;
     }

@@ -1,8 +1,8 @@
 # Social Influence
 
-[![Build Status](https://travis-ci.org/gstamatelat/social-influence.svg?branch=master)](https://travis-ci.org/gstamatelat/social-influence) [![Dependency Status](https://www.versioneye.com/user/projects/5596a989616634001b000007/badge.svg?style=flat)](https://www.versioneye.com/user/projects/5596a989616634001b000007)
+[![Build Status](https://travis-ci.org/gstamatelat/social-influence.svg?branch=master)](https://travis-ci.org/gstamatelat/social-influence) [![Dependency Status](https://www.versioneye.com/user/projects/55d2318a265ff6001c00001d/badge.svg?style=flat)](https://www.versioneye.com/user/projects/55d2318a265ff6001c00001d)
 
-Java network/graph framework with emphasis on social influence
+Java 8 network/graph framework with emphasis on social influence and opinion dynamics.
 
 ## Usage
 
@@ -89,10 +89,6 @@ Remove edge     | O(1)
 Contains vertex | O(1)
 Contains edge   | O(1)
 
-            | Storage | Add vertex | Add edge | Remove vertex | Remove edge | Contains vertex | Contains edge
------------ | ------- | ---------- | -------- | ------------- | ----------- | --------------- | -------------
-MemoryGraph | O(n+m)  | O(1)       | O(1)     | O(m)          | O(1)        | O(1)            | O(1)
-
 ## TODO
 
 - There needs to be a helper function or some `Graph` member method that can return if a graph is aperiodic or not
@@ -103,3 +99,4 @@ MemoryGraph | O(n+m)  | O(1)       | O(1)     | O(m)          | O(1)        | O(
 - A PageRank test on a known graph
 - GraphOperations.combineGraphs seems like a generalization of Graph.deepCopy
 - Consider changing the iterator of Move to Iterator<MovePoint> or Iterator<GenericPair<Vertex,Double>>
+- Implement `Metadata` on `Vertex` and `Edge`

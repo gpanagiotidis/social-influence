@@ -15,11 +15,18 @@ public class GraphUtils {
         Vertex first = previous;
         while (vertexIterator.hasNext()) {
             Vertex next = vertexIterator.next();
-            // TODO: Should only add if not exists in order to leave the weight unmodified
-            g.addEdge(previous, next, undirected);
+            if (undirected) {
+                g.addEdges(previous, next);
+            } else {
+                g.addEdge(previous, next);
+            }
             previous = next;
         }
-        g.addEdge(previous, first, undirected);
+        if (undirected) {
+            g.addEdges(previous, first);
+        } else {
+            g.addEdge(previous, first);
+        }
     }
 
     /**
@@ -44,22 +51,6 @@ public class GraphUtils {
         }
 
         return v;
-    }
-
-    /**
-     * <p>Connects all the vertices in the graph. Does not create self-connections (loops).</p>
-     * <dl><dt><b>Complexity:</b></dt><dd>O(n<sup>2</sup>)</dd></dl>
-     *
-     * @param g the graph to apply the transformation to
-     */
-    public static void connectAllVertices(Graph g) {
-        for (Vertex v : g) {
-            for (Vertex w : g) {
-                if (!v.equals(w)) {
-                    g.addEdge(v, w);
-                }
-            }
-        }
     }
 
     /**

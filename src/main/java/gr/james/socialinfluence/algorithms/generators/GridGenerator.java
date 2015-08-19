@@ -3,7 +3,6 @@ package gr.james.socialinfluence.algorithms.generators;
 import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.api.GraphGenerator;
 import gr.james.socialinfluence.graph.Vertex;
-import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
 
 import java.util.List;
@@ -33,18 +32,18 @@ public class GridGenerator<T extends Graph> implements GraphGenerator<T> {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
                 if (j != m - 1) {
-                    g.addEdge(set.get(count), set.get(count + 1), true);
+                    g.addEdges(set.get(count), set.get(count + 1));
                 }
                 if (i != n - 1) {
-                    g.addEdge(set.get(count), set.get(count + m), true);
+                    g.addEdges(set.get(count), set.get(count + m));
                 }
                 count = count + 1;
             }
         }
 
-        g.setMeta(Finals.TYPE_META, "Grid")
-                .setMeta("n", String.valueOf(n))
-                .setMeta("m", String.valueOf(m));
+        g.setGraphType("Grid");
+        g.setMeta("n", String.valueOf(n));
+        g.setMeta("m", String.valueOf(m));
 
         return g;
     }

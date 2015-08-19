@@ -5,12 +5,13 @@ import gr.james.socialinfluence.algorithms.iterators.RandomVertexIterator;
 import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.game.*;
 import gr.james.socialinfluence.graph.GraphUtils;
-import gr.james.socialinfluence.graph.ImmutableGraph;
 import gr.james.socialinfluence.graph.MemoryGraph;
 import gr.james.socialinfluence.graph.Vertex;
 import gr.james.socialinfluence.util.RandomHelper;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 /**
  * <p>Implements a simple brute-force player.</p>
@@ -24,7 +25,7 @@ import java.util.HashSet;
  * </ul>
  */
 public class BruteForcePlayer extends Player {
-    public static Move getRandomMove(ImmutableGraph g, int numOfMoves, int weightLevels, Move lastMove, boolean clever) {
+    public static Move getRandomMove(Graph g, int numOfMoves, int weightLevels, Move lastMove, boolean clever) {
         if (!clever) {
             return getRandomMoveWithoutMutation(g, numOfMoves, weightLevels);
         } else {
@@ -32,7 +33,7 @@ public class BruteForcePlayer extends Player {
         }
     }
 
-    public static Move getRandomMoveWithoutMutation(ImmutableGraph g, int numOfMoves, int weightLevels) {
+    public static Move getRandomMoveWithoutMutation(Graph g, int numOfMoves, int weightLevels) {
         Move moves = new Move();
         RandomVertexIterator it = new RandomVertexIterator(g);
         while (moves.getVerticesCount() < numOfMoves) {
@@ -42,7 +43,7 @@ public class BruteForcePlayer extends Player {
         return moves;
     }
 
-    public static Move getRandomMoveWithMutation(ImmutableGraph g, int numOfMoves, int weightLevels, Move lastMove) {
+    public static Move getRandomMoveWithMutation(Graph g, int numOfMoves, int weightLevels, Move lastMove) {
         double jump_probability = 0.2; // TODO: Make it an option, or even better adaptive since it should depend on the diameter of the graph
 
         Move moves = new Move();
@@ -59,37 +60,36 @@ public class BruteForcePlayer extends Player {
     }
 
     @Override
-    public Player putDefaultOptions() {
-        this.options.put("weight_levels", "10");
-        this.options.put("epsilon", "0.0");
-        this.options.put("clever", "false");
-        return this;
+    public Map<String, String> defaultOptions() {
+        Map<String, String> defaultOptions = new HashMap<>();
+        defaultOptions.put("weight_levels", "10");
+        defaultOptions.put("epsilon", "0.0");
+        defaultOptions.put("clever", "false");
+        return defaultOptions;
     }
 
     @Override
-    public void suggestMove(ImmutableGraph g, GameDefinition d, MovePointer movePtr) {
+    public void suggestMove(Graph g, GameDefinition d, MovePointer movePtr) {
         Graph mg = GraphUtils.deepCopy(MemoryGraph.class, g); // TODO: Sure this MemoryGraph thing is OK?
-        Game game = new Game(mg);
 
         HashSet<Move> movesHistory = new HashSet<>();
         HashSet<Move> moveDraws = new HashSet<>();
 
-        Move bestMove = getRandomMove(g, d.getActions(), Integer.parseInt(this.options.get("weight_levels")), null, false);
+        Move bestMove = getRandomMove(g, d.getActions(), Integer.parseInt(getOption("weight_levels")), null, false);
         movesHistory.add(bestMove);
 
         while (!this.isInterrupted()) {
-            Move newMove = getRandomMove(g, d.getActions(), Integer.parseInt(this.options.get("weight_levels")), game.getPlayerAMove(), Boolean.parseBoolean(this.options.get("clever")));
-            game.setPlayer(PlayerEnum.A, bestMove);
-            game.setPlayer(PlayerEnum.B, newMove);
-            int gameScore = game.runGame(d, Double.parseDouble(this.options.get("epsilon"))).score;
+            Move newMove = getRandomMove(g, d.getActions(), Integer.parseInt(getOption("weight_levels")), bestMove,
+                    Boolean.parseBoolean(getOption("clever")));
+            int gameScore = Game.runMoves(mg, d, bestMove, newMove, Double.parseDouble(getOption("epsilon"))).score;
             if (gameScore == 0) {
-                if (moveDraws.add(game.getPlayerBMove())) {
-                    log.info("Draw with move {}", game.getPlayerBMove());
+                if (moveDraws.add(newMove)) {
+                    log.debug("Draw with move {}", newMove);
                 }
             } else if (gameScore > 0) {
                 boolean contained = movesHistory.add(newMove);
                 if (!contained) {
-                    log.info("Going in circles after {}", game.getPlayerBMove());
+                    log.debug("Going in circles after {}", newMove);
                 }
                 moveDraws.clear();
                 bestMove = newMove;

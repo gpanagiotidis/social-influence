@@ -3,7 +3,6 @@ package gr.james.socialinfluence.algorithms.generators;
 import gr.james.socialinfluence.api.Graph;
 import gr.james.socialinfluence.api.GraphGenerator;
 import gr.james.socialinfluence.graph.Vertex;
-import gr.james.socialinfluence.util.Finals;
 import gr.james.socialinfluence.util.Helper;
 
 public class CycleGenerator<T extends Graph> implements GraphGenerator<T> {
@@ -22,13 +21,13 @@ public class CycleGenerator<T extends Graph> implements GraphGenerator<T> {
         Vertex startVertex = g.addVertex(), previousVertex = startVertex;
         while (g.getVerticesCount() < totalVertices) {
             Vertex newVertex = g.addVertex();
-            g.addEdge(previousVertex, newVertex, true);
+            g.addEdges(previousVertex, newVertex);
             previousVertex = newVertex;
         }
-        g.addEdge(startVertex, previousVertex, true);
+        g.addEdges(startVertex, previousVertex);
 
-        g.setMeta(Finals.TYPE_META, "Cycle")
-                .setMeta("totalVertices", String.valueOf(totalVertices));
+        g.setGraphType("Cycle");
+        g.setMeta("totalVertices", String.valueOf(totalVertices));
 
         return g;
     }
